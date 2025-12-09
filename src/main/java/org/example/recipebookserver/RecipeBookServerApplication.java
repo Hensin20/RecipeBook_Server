@@ -1,5 +1,7 @@
 package org.example.recipebookserver;
+import org.example.recipebookserver.model.Recipe;
 import org.example.recipebookserver.model.User;
+import org.example.recipebookserver.service.RecipeService;
 import org.example.recipebookserver.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -8,6 +10,8 @@ import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @SpringBootApplication
 public class RecipeBookServerApplication {
@@ -50,3 +54,4 @@ class AuthController {
         return ResponseEntity.ok(userService.login(email, password));
    }
 }
+
