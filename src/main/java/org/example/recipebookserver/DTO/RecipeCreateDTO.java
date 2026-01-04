@@ -2,21 +2,12 @@ package org.example.recipebookserver.DTO;
 
 import java.util.List;
 
-public class RecipeDTO {
-    private Long id;
+public class RecipeCreateDTO {
     private String title;
     private String description;
-    private double averageRating;
     private String categoryName;
     private String authorName;
     private List<IngredientDTO> ingredients;
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getTitle() {
         return title;
@@ -32,14 +23,6 @@ public class RecipeDTO {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public double getAverageRating() {
-        return averageRating;
-    }
-
-    public void setAverageRating(double averageRating) {
-        this.averageRating = averageRating;
     }
 
     public String getCategoryName() {
@@ -58,7 +41,11 @@ public class RecipeDTO {
         this.authorName = authorName;
     }
 
-    public List<IngredientDTO> getIngredients() { return ingredients; }
-    public void setIngredients(List<IngredientDTO> ingredients) { this.ingredients = ingredients; }
-}
+    public List<IngredientDTO> getIngredients() {
+        return ingredients;
+    }
 
+    public void setIngredients(List<IngredientDTO> ingredients) {
+        this.ingredients = ingredients;
+    }
+}

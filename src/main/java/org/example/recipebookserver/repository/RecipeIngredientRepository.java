@@ -14,5 +14,7 @@ public interface RecipeIngredientRepository extends JpaRepository<RecipeIngredie
     @Query("SELECT DISTINCT r FROM RecipeIngredient ri JOIN ri.recipe r JOIN ri.ingredient i " +
             "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Recipe> findRecipesByIngredient(@Param("name") String name);
+
+    List<RecipeIngredient> findByRecipeId(Long recipeId);
 }
 

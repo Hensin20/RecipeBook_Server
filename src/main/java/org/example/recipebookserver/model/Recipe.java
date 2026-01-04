@@ -2,6 +2,7 @@ package org.example.recipebookserver.model;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,10 +25,11 @@ public class Recipe {
     private Category category;
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
-    private List<RecipeIngredient> ingredients;
+    private List<RecipeIngredient> ingredients = new ArrayList<>();
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
     private List<Instruction> instructions;
+
 
     public Long getId() {
         return id;
