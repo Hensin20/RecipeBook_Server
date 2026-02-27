@@ -1,5 +1,6 @@
 package org.example.recipebookserver.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class Category {
     @Column(unique = true, nullable = false, length = 100)
     private String name;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private java.util.List<Recipe> recipes;
 

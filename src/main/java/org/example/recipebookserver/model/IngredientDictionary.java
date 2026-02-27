@@ -1,5 +1,6 @@
 package org.example.recipebookserver.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class IngredientDictionary {
     @Column(unique = true, nullable = false, length = 150)
     private String name;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL)
     private java.util.List<RecipeIngredient> recipeIngredients;
 
