@@ -3,7 +3,9 @@ package org.example.recipebookserver.controller;
 import org.example.recipebookserver.DTO.IngredientDTO;
 import org.example.recipebookserver.DTO.RecipeCreateDTO;
 import org.example.recipebookserver.DTO.RecipeDTO;
+import org.example.recipebookserver.model.IngredientDictionary;
 import org.example.recipebookserver.model.Recipe;
+import org.example.recipebookserver.repository.IngredientDictionaryRepository;
 import org.example.recipebookserver.repository.RecipeIngredientRepository;
 import org.example.recipebookserver.service.RecipeService;
 import org.springframework.http.ResponseEntity;
@@ -67,5 +69,6 @@ public class RecipeController {
     public List<RecipeDTO> searchByCategory(@RequestParam String category){
         return recipeService.findByCategory(category);
     }
+
 
 }
