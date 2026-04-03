@@ -24,11 +24,14 @@ public class Recipe {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<RecipeImage> images;
+
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
-    private List<Instruction> instructions;
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Instruction> instructions;
 
 
     public Long getId() {

@@ -1,74 +1,62 @@
 package org.example.recipebookserver.controller;
 
-import org.example.recipebookserver.DTO.IngredientDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.recipebookserver.DTO.RecipeCreateDTO;
 import org.example.recipebookserver.DTO.RecipeDTO;
-import org.example.recipebookserver.model.IngredientDictionary;
-import org.example.recipebookserver.model.Recipe;
-import org.example.recipebookserver.repository.IngredientDictionaryRepository;
-import org.example.recipebookserver.repository.RecipeIngredientRepository;
 import org.example.recipebookserver.service.RecipeService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/recipes")
 public class RecipeController {
+
     private final RecipeService recipeService;
-    private final RecipeIngredientRepository recipeIngredientRepository;
+    private final ObjectMapper objectMapper;
 
-    public RecipeController(RecipeService recipeService, RecipeIngredientRepository recipeIngredientRepository) {
+    public RecipeController(RecipeService recipeService, ObjectMapper objectMapper) {
         this.recipeService = recipeService;
-        this.recipeIngredientRepository = recipeIngredientRepository;
+        this.objectMapper = objectMapper;
     }
 
-    @PostMapping
-    public ResponseEntity<RecipeDTO> createRecipe(@RequestBody RecipeCreateDTO dto) {
-        Recipe recipe = recipeService.createRecipe(dto);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createRecipe(
+            @RequestPart("recipe") String recipeJson, // Приймаємо JSON як текст
+            @RequestPart(value = "images", required = false) List<MultipartFile> images // Приймаємо картинки
+    ) {
+        try {
+            // Конвертуємо JSON-рядок в об'єкт RecipeCreateDTO
+            RecipeCreateDTO dto = objectMapper.readValue(recipeJson, RecipeCreateDTO.class);
 
-        RecipeDTO response = new RecipeDTO();
-        response.setId(recipe.getId());
-        response.setTitle(recipe.getTitle());
-        response.setDescription(recipe.getDescription());
-        response.setAverageRating(recipe.getAverageRating() != null ? recipe.getAverageRating() : 0.0);
-        response.setCategoryName(recipe.getCategory().getName());
-        response.setAuthorName(recipe.getAuthor().getUsername());
+            // Викликаємо твій сервіс
+            recipeService.createRecipe(dto, images);
 
-        List<IngredientDTO> ingredients = recipeIngredientRepository.findByRecipeId(recipe.getId())
-                .stream()
-                .map(ri -> {
-                    IngredientDTO ingDto = new IngredientDTO();
-                    ingDto.setName(ri.getIngredient().getName());
-                    ingDto.setQuantity(ri.getQuantity());
-                    return ingDto;
-                })
-                .toList();
-        response.setIngredients(ingredients);
-
-        return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Рецепт успішно створено!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Помилка при створенні рецепту: " + e.getMessage());
+        }
     }
-
     @GetMapping
-    public List<RecipeDTO> getRecipes() {
-        return recipeService.getAllRecipes();
+    public ResponseEntity<List<RecipeDTO>> getAllRecipes() {
+        return ResponseEntity.ok(recipeService.getAllRecipes());
     }
-
-    @GetMapping("/search-by-ingredient")
-    public List<RecipeDTO> searchByIngredient(@RequestParam String ingredient){
-        return recipeService.findByIngredient(ingredient);
+    // Отримання одного рецепту за ID
+    @GetMapping("/{id}")
+    public ResponseEntity<RecipeDTO> getRecipeById(@PathVariable Long id) {
+        try {
+            // Викликаємо метод сервісу, який ти вже оновив раніше
+            RecipeDTO recipe = recipeService.getRecipeById(id);
+            return ResponseEntity.ok(recipe);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.notFound().build(); // Якщо рецепт не знайдено, віддаємо 404
+        }
     }
-
-    @GetMapping("/search-by-title")
-    public List<RecipeDTO> searchByTitle(@RequestParam String title){
-        return recipeService.findByTitle(title);
-    }
-
-    @GetMapping("/search-by-category")
-    public List<RecipeDTO> searchByCategory(@RequestParam String category){
-        return recipeService.findByCategory(category);
-    }
-
-
 }

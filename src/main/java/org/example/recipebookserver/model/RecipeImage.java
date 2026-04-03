@@ -4,27 +4,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "instructions")
-public class Instruction {
+@Table(name = "recipe_images")
+public class RecipeImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Зв'язок Багато-до-Одного (Багато кроків до одного рецепту)
+    // Зв'язок Багато-до-Одного (Багато картинок до одного рецепту)
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipe_id", nullable = false)
     private Recipe recipe;
 
-    @Column(name = "step_number", nullable = false)
-    private Integer stepNumber;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String text;
-
-    // Додане тобою поле для фотографії конкретного кроку
-    @Column(name = "image_url", columnDefinition = "TEXT")
+    @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 
     // Getters and Setters
@@ -33,12 +26,6 @@ public class Instruction {
 
     public Recipe getRecipe() { return recipe; }
     public void setRecipe(Recipe recipe) { this.recipe = recipe; }
-
-    public Integer getStepNumber() { return stepNumber; }
-    public void setStepNumber(Integer stepNumber) { this.stepNumber = stepNumber; }
-
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }

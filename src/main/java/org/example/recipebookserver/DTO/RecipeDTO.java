@@ -10,6 +10,8 @@ public class RecipeDTO {
     private String categoryName;
     private String authorName;
     private List<IngredientDTO> ingredients;
+    private String instruction;
+    private List<String> imageUrls;
     public Long getId() {
         return id;
     }
@@ -57,6 +59,11 @@ public class RecipeDTO {
     public void setAuthorName(String authorName) {
         this.authorName = authorName;
     }
+
+    public String getInstruction() { return instruction; }
+    public void setInstruction(String instruction) { this.instruction = instruction; }
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 
     public List<IngredientDTO> getIngredients() { return ingredients; }
     public void setIngredients(List<IngredientDTO> ingredients) { this.ingredients = ingredients; }

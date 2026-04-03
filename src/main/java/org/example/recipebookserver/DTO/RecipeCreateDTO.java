@@ -8,6 +8,7 @@ public class RecipeCreateDTO {
     private String categoryName;
     private String authorName;
     private List<IngredientDTO> ingredients;
+    private String instruction;
 
     public String getTitle() {
         return title;
@@ -48,4 +49,8 @@ public class RecipeCreateDTO {
     public void setIngredients(List<IngredientDTO> ingredients) {
         this.ingredients = ingredients;
     }
+
+
+    public String getInstruction() { return instruction; }
+    public void setInstruction(String instruction) { this.instruction = instruction; }
 }
