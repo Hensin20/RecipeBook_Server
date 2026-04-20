@@ -7,6 +7,7 @@ public class RecipeDTO {
     private String title;
     private String description;
     private double averageRating;
+    private int votesCount;
     private String categoryName;
     private String authorName;
     private List<IngredientDTO> ingredients;
@@ -46,6 +47,14 @@ public class RecipeDTO {
 
     public String getCategoryName() {
         return categoryName;
+    }
+
+    public int getVotesCount() {
+        return votesCount;
+    }
+
+    public void setVotesCount(int votesCount) {
+        this.votesCount = votesCount;
     }
 
     public void setCategoryName(String categoryName) {

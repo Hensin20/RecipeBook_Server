@@ -14,7 +14,9 @@ public class Recipe {
 
     private String title;
     private  String description;
-    private Double averageRating;
+    private Double averageRating = 0.0;
+    @Column(columnDefinition = "integer default 0")
+    private Integer votesCount = 0;
 
     @ManyToOne
     @JoinColumn(name = "author_id")
@@ -44,6 +46,14 @@ public class Recipe {
 
     public String getTitle() {
         return title;
+    }
+
+    public Integer getVotesCount() {
+        return votesCount;
+    }
+
+    public void setVotesCount(Integer votesCount) {
+        this.votesCount = votesCount;
     }
 
     public void setTitle(String title) {

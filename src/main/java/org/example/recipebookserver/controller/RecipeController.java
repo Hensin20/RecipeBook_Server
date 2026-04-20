@@ -47,6 +47,23 @@ public class RecipeController {
     public ResponseEntity<List<RecipeDTO>> getAllRecipes() {
         return ResponseEntity.ok(recipeService.getAllRecipes());
     }
+
+    // Додай цей метод під getRecipeById
+    @PostMapping("/{id}/rate")
+    public ResponseEntity<Double> rateRecipe(@PathVariable Long id, @RequestParam int rating) {
+        if (rating < 1 || rating > 5) {
+            return ResponseEntity.badRequest().build(); // Захист від неправильних оцінок
+        }
+        try {
+            double newAverage = recipeService.addRating(id, rating);
+            return ResponseEntity.ok(newAverage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
+
     // Отримання одного рецепту за ID
     @GetMapping("/{id}")
     public ResponseEntity<RecipeDTO> getRecipeById(@PathVariable Long id) {
@@ -58,5 +75,10 @@ public class RecipeController {
             e.printStackTrace();
             return ResponseEntity.notFound().build(); // Якщо рецепт не знайдено, віддаємо 404
         }
+    }
+
+    @GetMapping("/author/{username}")
+    public ResponseEntity<List<RecipeDTO>> getRecipesByAuthor(@PathVariable String username) {
+        return ResponseEntity.ok(recipeService.getRecipesByAuthor(username));
     }
 }

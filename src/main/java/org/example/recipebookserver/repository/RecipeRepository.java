@@ -18,5 +18,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     @Query("SELECT r FROM Recipe r JOIN r.category c WHERE LOWER(c.name) = LOWER(:categoryName)")
     List<Recipe> findByCategory(@Param("categoryName") String categoryName);
+
+    List<Recipe> findByAuthorUsername(String username);
 }
 

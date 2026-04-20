@@ -83,6 +83,7 @@ public class RecipeService {
         dto.setTitle(recipe.getTitle());
         dto.setDescription(recipe.getDescription());
         dto.setAverageRating(recipe.getAverageRating());
+        dto.setVotesCount(recipe.getVotesCount() != null ? recipe.getVotesCount() : 0);
         dto.setCategoryName(recipe.getCategory() != null ? recipe.getCategory().getName() : null);
         dto.setAuthorName(recipe.getAuthor() != null ? recipe.getAuthor().getUsername() : null);
 
@@ -182,6 +183,7 @@ public class RecipeService {
         dto.setTitle(recipe.getTitle());
         dto.setDescription(recipe.getDescription());
         dto.setAverageRating(recipe.getAverageRating());
+        dto.setVotesCount(recipe.getVotesCount() != null ? recipe.getVotesCount() : 0);
         dto.setCategoryName(recipe.getCategory().getName());
         dto.setAuthorName(recipe.getAuthor().getUsername());
 
@@ -208,5 +210,31 @@ public class RecipeService {
 
 
         return dto;
+    }
+
+    @Transactional
+    public double addRating(Long recipeId, int newRating) {
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+
+        // Захист від старих записів у базі, де ці поля можуть бути null
+        double currentAvg = recipe.getAverageRating() != null ? recipe.getAverageRating() : 0.0;
+        int count = recipe.getVotesCount() != null ? recipe.getVotesCount() : 0;
+
+        // Формула середнього значення: (старе_середнє * кількість + нова_оцінка) / (кількість + 1)
+        double updatedAvg = ((currentAvg * count) + newRating) / (count + 1);
+
+        recipe.setAverageRating(updatedAvg);
+        recipe.setVotesCount(count + 1);
+
+        recipeRepository.save(recipe);
+
+        return updatedAvg; // Повертаємо новий рейтинг, щоб показати його на телефоні
+    }
+
+    public List<RecipeDTO> getRecipesByAuthor(String username) {
+        return recipeRepository.findByAuthorUsername(username).stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 }
