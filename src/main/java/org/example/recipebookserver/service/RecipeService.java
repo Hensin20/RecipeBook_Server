@@ -77,7 +77,7 @@ public class RecipeService {
                 .toList();
     }
 
-    private RecipeDTO mapToDTO(Recipe recipe) {
+    public RecipeDTO mapToDTO(Recipe recipe) {
         RecipeDTO dto = new RecipeDTO();
         dto.setId(recipe.getId());
         dto.setTitle(recipe.getTitle());
@@ -237,4 +237,6 @@ public class RecipeService {
                 .map(this::mapToDTO)
                 .toList();
     }
+
+
 }

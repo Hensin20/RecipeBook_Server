@@ -81,4 +81,9 @@ public class RecipeController {
     public ResponseEntity<List<RecipeDTO>> getRecipesByAuthor(@PathVariable String username) {
         return ResponseEntity.ok(recipeService.getRecipesByAuthor(username));
     }
+
+    @GetMapping("/search-by-category")
+    public List<RecipeDTO> searchByCategory(@RequestParam String category) {
+        return recipeService.findByCategory(category);
+    }
 }

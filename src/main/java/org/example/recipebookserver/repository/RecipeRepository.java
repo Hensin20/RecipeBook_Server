@@ -20,5 +20,9 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     List<Recipe> findByCategory(@Param("categoryName") String categoryName);
 
     List<Recipe> findByAuthorUsername(String username);
+
+    List<Recipe> findByCategoryName(String categoryName);
+
+
 }
 
