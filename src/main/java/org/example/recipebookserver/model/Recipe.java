@@ -29,7 +29,8 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<RecipeImage> images;
 
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
+    // ДОДАНО: orphanRemoval = true
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
