@@ -10,8 +10,11 @@ import java.util.List;
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     @Query("SELECT r FROM Recipe r JOIN r.ingredients ri JOIN ri.ingredient i " +
-            "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :ingredientName, '%'))")
-    List<Recipe> findByIngredientName(@Param("ingredientName") String ingredientName);
+            "WHERE LOWER(i.name) IN :ingredientNames " +
+            "GROUP BY r " +
+            "HAVING COUNT(DISTINCT i.name) = :ingredientCount")
+    List<Recipe> findByIngredientsMatch(@Param("ingredientNames") List<String> ingredientNames,
+                                        @Param("ingredientCount") long ingredientCount);
 
     @Query("SELECT r FROM Recipe r WHERE LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     List<Recipe> findByTitle(@Param("title") String title);

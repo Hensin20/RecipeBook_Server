@@ -16,8 +16,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class RecipeService {
@@ -59,10 +61,20 @@ public class RecipeService {
                 .toList();
     }
 
-    public List<RecipeDTO> findByIngredient(String ingredientName) {
-        return recipeRepository.findByIngredientName(ingredientName).stream()
-                .map(this::mapToDTO)
-                .toList();
+    public List<RecipeDTO> searchByIngredients(String ingredientsString) {
+        // Розбиваємо рядок по комі, забираємо зайві пробіли і робимо малі літери
+        List<String> names = Arrays.stream(ingredientsString.split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+
+        // Шукаємо рецепти, які містять ВСІ ці інгредієнти
+        List<Recipe> recipes = recipeRepository.findByIngredientsMatch(names, (long) names.size());
+
+        // Конвертуємо в DTO (використай свій існуючий метод конвертації, наприклад mapToDTO або як він у тебе називається)
+        return recipes.stream()
+                .map(this::mapToDTO) // Заміни mapToDTO на назву твого методу, який перетворює Recipe в RecipeDTO
+                .collect(Collectors.toList());
     }
 
     public List<RecipeDTO> findByTitle(String title) {
