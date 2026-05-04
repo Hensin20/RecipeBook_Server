@@ -5,10 +5,13 @@ import java.util.List;
 public class RecipeCreateDTO {
     private String title;
     private String description;
-    private String categoryName;
-    private String authorName;
-    private List<IngredientDTO> ingredients;
     private String instruction;
+    private String authorName;
+
+    // ОНОВЛЕНО: Тепер це список категорій
+    private List<String> categoryNames;
+
+    private List<IngredientDTO> ingredients;
 
     public String getTitle() {
         return title;
@@ -26,12 +29,12 @@ public class RecipeCreateDTO {
         this.description = description;
     }
 
-    public String getCategoryName() {
-        return categoryName;
+    public String getInstruction() {
+        return instruction;
     }
 
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
+    public void setInstruction(String instruction) {
+        this.instruction = instruction;
     }
 
     public String getAuthorName() {
@@ -42,6 +45,15 @@ public class RecipeCreateDTO {
         this.authorName = authorName;
     }
 
+    // ОНОВЛЕНІ GETTER ТА SETTER
+    public List<String> getCategoryNames() {
+        return categoryNames;
+    }
+
+    public void setCategoryNames(List<String> categoryNames) {
+        this.categoryNames = categoryNames;
+    }
+
     public List<IngredientDTO> getIngredients() {
         return ingredients;
     }
@@ -49,8 +61,4 @@ public class RecipeCreateDTO {
     public void setIngredients(List<IngredientDTO> ingredients) {
         this.ingredients = ingredients;
     }
-
-
-    public String getInstruction() { return instruction; }
-    public void setInstruction(String instruction) { this.instruction = instruction; }
 }

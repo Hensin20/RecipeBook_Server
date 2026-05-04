@@ -6,13 +6,17 @@ public class RecipeDTO {
     private Long id;
     private String title;
     private String description;
-    private double averageRating;
-    private int votesCount;
-    private String categoryName;
-    private String authorName;
-    private List<IngredientDTO> ingredients;
+    private Double averageRating;
+    private Integer votesCount;
     private String instruction;
+    private String authorName;
+
+    // ОНОВЛЕНО: Тепер це список категорій
+    private List<String> categoryNames;
+
+    private List<IngredientDTO> ingredients;
     private List<String> imageUrls;
+
     public Long getId() {
         return id;
     }
@@ -37,28 +41,28 @@ public class RecipeDTO {
         this.description = description;
     }
 
-    public double getAverageRating() {
+    public Double getAverageRating() {
         return averageRating;
     }
 
-    public void setAverageRating(double averageRating) {
+    public void setAverageRating(Double averageRating) {
         this.averageRating = averageRating;
     }
 
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public int getVotesCount() {
+    public Integer getVotesCount() {
         return votesCount;
     }
 
-    public void setVotesCount(int votesCount) {
+    public void setVotesCount(Integer votesCount) {
         this.votesCount = votesCount;
     }
 
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
+    public String getInstruction() {
+        return instruction;
+    }
+
+    public void setInstruction(String instruction) {
+        this.instruction = instruction;
     }
 
     public String getAuthorName() {
@@ -69,12 +73,28 @@ public class RecipeDTO {
         this.authorName = authorName;
     }
 
-    public String getInstruction() { return instruction; }
-    public void setInstruction(String instruction) { this.instruction = instruction; }
-    public List<String> getImageUrls() { return imageUrls; }
-    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
+    // ОНОВЛЕНІ GETTER ТА SETTER
+    public List<String> getCategoryNames() {
+        return categoryNames;
+    }
 
-    public List<IngredientDTO> getIngredients() { return ingredients; }
-    public void setIngredients(List<IngredientDTO> ingredients) { this.ingredients = ingredients; }
+    public void setCategoryNames(List<String> categoryNames) {
+        this.categoryNames = categoryNames;
+    }
+
+    public List<IngredientDTO> getIngredients() {
+        return ingredients;
+    }
+
+    public void setIngredients(List<IngredientDTO> ingredients) {
+        this.ingredients = ingredients;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+    }
 }
-

@@ -8,16 +8,17 @@ import java.util.List;
 @Entity
 @Table(name = "categories")
 public class Category {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 100)
     private String name;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private java.util.List<Recipe> recipes;
+    // --- ОНОВЛЕНО: Тепер це ManyToMany і вказує на нове поле "categories" у Recipe ---
+    @ManyToMany(mappedBy = "categories")
+    @JsonIgnore // Це важливо, щоб сервер не завис при перетворенні в JSON (нескінченний цикл)
+    private List<Recipe> recipes;
 
     public Long getId() {
         return id;

@@ -13,8 +13,9 @@ public class Recipe {
     private Long id;
 
     private String title;
-    private  String description;
+    private String description;
     private Double averageRating = 0.0;
+
     @Column(columnDefinition = "integer default 0")
     private Integer votesCount = 0;
 
@@ -22,14 +23,18 @@ public class Recipe {
     @JoinColumn(name = "author_id")
     private User author;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
+    // --- ОНОВЛЕНО: Тепер рецепт може мати багато категорій ---
+    @ManyToMany
+    @JoinTable(
+            name = "recipe_categories",
+            joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories = new ArrayList<>();
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<RecipeImage> images;
 
-    // ДОДАНО: orphanRemoval = true
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
@@ -85,12 +90,13 @@ public class Recipe {
         this.author = author;
     }
 
-    public Category getCategory() {
-        return category;
+    // --- ОНОВЛЕНІ GETTER та SETTER для категорій ---
+    public List<Category> getCategories() {
+        return categories;
     }
 
-    public void setCategory(Category category) {
-        this.category = category;
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
     }
 
     public List<RecipeIngredient> getIngredients() {

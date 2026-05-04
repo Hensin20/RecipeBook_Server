@@ -3,7 +3,6 @@ package org.example.recipebookserver.service;
 import org.example.recipebookserver.DTO.IngredientDTO;
 import org.example.recipebookserver.DTO.RecipeCreateDTO;
 import org.example.recipebookserver.DTO.RecipeDTO;
-
 import org.example.recipebookserver.model.*;
 import org.example.recipebookserver.repository.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 @Service
 public class RecipeService {
 
-    // Вказуємо папку для збереження фото з application.properties
     @Value("${file.upload-dir:uploads/}")
     private String uploadDir;
 
@@ -33,8 +31,6 @@ public class RecipeService {
     private final RecipeIngredientRepository recipeIngredientRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
-
-    // Нові репозиторії для фото та інструкцій
     private final RecipeImageRepository recipeImageRepository;
     private final InstructionRepository instructionRepository;
 
@@ -62,18 +58,15 @@ public class RecipeService {
     }
 
     public List<RecipeDTO> searchByIngredients(String ingredientsString) {
-        // Розбиваємо рядок по комі, забираємо зайві пробіли і робимо малі літери
         List<String> names = Arrays.stream(ingredientsString.split(","))
                 .map(String::trim)
                 .map(String::toLowerCase)
                 .collect(Collectors.toList());
 
-        // Шукаємо рецепти, які містять ВСІ ці інгредієнти
         List<Recipe> recipes = recipeRepository.findByIngredientsMatch(names, (long) names.size());
 
-        // Конвертуємо в DTO (використай свій існуючий метод конвертації, наприклад mapToDTO або як він у тебе називається)
         return recipes.stream()
-                .map(this::mapToDTO) // Заміни mapToDTO на назву твого методу, який перетворює Recipe в RecipeDTO
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -84,7 +77,7 @@ public class RecipeService {
     }
 
     public List<RecipeDTO> findByCategory(String category) {
-        return recipeRepository.findByCategory(category).stream()
+        return recipeRepository.findByCategoriesName(category).stream()
                 .map(this::mapToDTO)
                 .toList();
     }
@@ -96,7 +89,13 @@ public class RecipeService {
         dto.setDescription(recipe.getDescription());
         dto.setAverageRating(recipe.getAverageRating());
         dto.setVotesCount(recipe.getVotesCount() != null ? recipe.getVotesCount() : 0);
-        dto.setCategoryName(recipe.getCategory() != null ? recipe.getCategory().getName() : null);
+
+        // ОНОВЛЕНО: Беремо список категорій і перетворюємо їх на список назв
+        List<String> catNames = recipe.getCategories().stream()
+                .map(Category::getName)
+                .collect(Collectors.toList());
+        dto.setCategoryNames(catNames);
+
         dto.setAuthorName(recipe.getAuthor() != null ? recipe.getAuthor().getUsername() : null);
 
         List<String> urls = recipeImageRepository.findByRecipeId(recipe.getId())
@@ -108,28 +107,29 @@ public class RecipeService {
         return dto;
     }
 
-    // Додаємо @Transactional, щоб уникнути часткового збереження у разі збою
     @Transactional
     public Recipe createRecipe(RecipeCreateDTO dto, List<MultipartFile> images) throws IOException {
         Recipe recipe = new Recipe();
         recipe.setTitle(dto.getTitle());
         recipe.setDescription(dto.getDescription());
-        recipe.setAverageRating(0.0); // дефолтне значення
+        recipe.setAverageRating(0.0);
 
-        // 1. Категорія
-        Category category = categoryRepository.findByName(dto.getCategoryName())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        recipe.setCategory(category);
+        // ОНОВЛЕНО: Додаємо кілька категорій
+        if (dto.getCategoryNames() != null) {
+            for (String catName : dto.getCategoryNames()) {
+                Category cat = categoryRepository.findByName(catName).orElse(null);
+                if (cat != null) {
+                    recipe.getCategories().add(cat);
+                }
+            }
+        }
 
-        // 2. Автор
         User author = userRepository.findByUsername(dto.getAuthorName())
                 .orElseThrow(() -> new RuntimeException("Author not found"));
         recipe.setAuthor(author);
 
-        // Зберігаємо рецепт, щоб отримати його ID (він потрібен для інгредієнтів, фото та інструкцій)
         recipe = recipeRepository.save(recipe);
 
-        // 3. Інструкція (Зберігаємо як 1-й крок)
         if (dto.getInstruction() != null && !dto.getInstruction().isEmpty()) {
             Instruction instruction = new Instruction();
             instruction.setRecipe(recipe);
@@ -138,19 +138,15 @@ public class RecipeService {
             instructionRepository.save(instruction);
         }
 
-        // 4. Додаємо інгредієнти
         if (dto.getIngredients() != null) {
             for (IngredientDTO ing : dto.getIngredients()) {
-                // шукаємо інгредієнт у словнику
                 IngredientDictionary dict = ingredientDictionaryRepository.findByName(ing.getName())
                         .orElseGet(() -> {
-                            // якщо немає — створюємо новий
                             IngredientDictionary newIng = new IngredientDictionary();
                             newIng.setName(ing.getName());
                             return ingredientDictionaryRepository.save(newIng);
                         });
 
-                // створюємо зв’язок рецепт ↔ інгредієнт
                 RecipeIngredient ri = new RecipeIngredient();
                 ri.setRecipe(recipe);
                 ri.setIngredient(dict);
@@ -160,22 +156,16 @@ public class RecipeService {
             }
         }
 
-        // 5. Зберігаємо фотографії на диск та в БД
         if (images != null && !images.isEmpty()) {
             File dir = new File(uploadDir);
             if (!dir.exists()) dir.mkdirs();
 
             for (MultipartFile file : images) {
                 if (file.isEmpty()) continue;
-
-                // Генеруємо унікальне ім'я для файлу, щоб уникнути перезапису
                 String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
                 Path filePath = Paths.get(uploadDir, fileName);
-
-                // Зберігаємо фізично на сервер
                 Files.write(filePath, file.getBytes());
 
-                // Зберігаємо запис у базу даних
                 RecipeImage recipeImage = new RecipeImage();
                 recipeImage.setRecipe(recipe);
                 recipeImage.setImageUrl(fileName);
@@ -196,7 +186,13 @@ public class RecipeService {
         dto.setDescription(recipe.getDescription());
         dto.setAverageRating(recipe.getAverageRating());
         dto.setVotesCount(recipe.getVotesCount() != null ? recipe.getVotesCount() : 0);
-        dto.setCategoryName(recipe.getCategory().getName());
+
+        // ОНОВЛЕНО: Беремо список категорій
+        List<String> catNames = recipe.getCategories().stream()
+                .map(Category::getName)
+                .collect(Collectors.toList());
+        dto.setCategoryNames(catNames);
+
         dto.setAuthorName(recipe.getAuthor().getUsername());
 
         List<IngredientDTO> ingredients = recipeIngredientRepository.findByRecipeId(recipe.getId())
@@ -209,6 +205,7 @@ public class RecipeService {
                 })
                 .toList();
         dto.setIngredients(ingredients);
+
         List<Instruction> instructionsList = instructionRepository.findByRecipeIdOrderByStepNumberAsc(recipe.getId());
         if (!instructionsList.isEmpty()) {
             dto.setInstruction(instructionsList.get(0).getText());
@@ -220,7 +217,6 @@ public class RecipeService {
                 .toList();
         dto.setImageUrls(urls);
 
-
         return dto;
     }
 
@@ -229,19 +225,15 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RuntimeException("Recipe not found"));
 
-        // Захист від старих записів у базі, де ці поля можуть бути null
         double currentAvg = recipe.getAverageRating() != null ? recipe.getAverageRating() : 0.0;
         int count = recipe.getVotesCount() != null ? recipe.getVotesCount() : 0;
-
-        // Формула середнього значення: (старе_середнє * кількість + нова_оцінка) / (кількість + 1)
         double updatedAvg = ((currentAvg * count) + newRating) / (count + 1);
 
         recipe.setAverageRating(updatedAvg);
         recipe.setVotesCount(count + 1);
-
         recipeRepository.save(recipe);
 
-        return updatedAvg; // Повертаємо новий рейтинг, щоб показати його на телефоні
+        return updatedAvg;
     }
 
     public List<RecipeDTO> getRecipesByAuthor(String username) {
@@ -250,5 +242,10 @@ public class RecipeService {
                 .toList();
     }
 
-
+    public List<RecipeDTO> searchRecipes(String query) {
+        List<Recipe> recipes = recipeRepository.findByTitleContainingIgnoreCase(query);
+        return recipes.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
 }

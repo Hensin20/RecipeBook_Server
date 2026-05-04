@@ -8,7 +8,7 @@ import org.example.recipebookserver.model.Recipe;
 import org.example.recipebookserver.repository.CategoryRepository;
 import org.example.recipebookserver.repository.IngredientDictionaryRepository;
 import org.example.recipebookserver.repository.RecipeRepository;
-import org.example.recipebookserver.repository.UserRepository; // ДОДАНО ІМПОРТ
+import org.example.recipebookserver.repository.UserRepository;
 import org.example.recipebookserver.service.RecipeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,9 +27,8 @@ public class RecipeController {
     private final RecipeRepository recipeRepository;
     private final CategoryRepository categoryRepository;
     private final IngredientDictionaryRepository ingredientDictionaryRepository;
-    private final UserRepository userRepository; // ДОДАНО РЕПОЗИТОРІЙ
+    private final UserRepository userRepository;
 
-    // ОНОВЛЕНО КОНСТРУКТОР: додано UserRepository
     public RecipeController(RecipeService recipeService,
                             ObjectMapper objectMapper,
                             RecipeRepository recipeRepository,
@@ -99,7 +98,6 @@ public class RecipeController {
         return recipeService.findByCategory(category);
     }
 
-    // --- ВИДАЛЕННЯ РЕЦЕПТУ ---
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRecipe(@PathVariable Long id, @RequestParam Long userId) {
         Recipe recipe = recipeRepository.findById(id).orElse(null);
@@ -113,11 +111,9 @@ public class RecipeController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Користувача не знайдено");
         }
 
-// Захист від NullPointerException, якщо у рецепта раптом немає автора
         boolean isAuthor = (recipe.getAuthor() != null) && recipe.getAuthor().getId().equals(userId);
         boolean isAdmin = requestUser.isAdmin();
 
-        // ВИПРАВЛЕНО: Дозволяємо, якщо це автор АБО адмін
         if (!isAuthor && !isAdmin) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ви можете видаляти лише свої рецепти");
         }
@@ -126,7 +122,6 @@ public class RecipeController {
         return ResponseEntity.ok("Рецепт успішно видалено");
     }
 
-    // --- РЕДАГУВАННЯ РЕЦЕПТУ ---
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRecipe(@PathVariable Long id, @RequestBody RecipeDTO updatedRecipeDto, @RequestParam Long userId) {
         Recipe recipe = recipeRepository.findById(id).orElse(null);
@@ -140,11 +135,9 @@ public class RecipeController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Користувача не знайдено");
         }
 
-// Захист від NullPointerException, якщо у рецепта раптом немає автора
         boolean isAuthor = (recipe.getAuthor() != null) && recipe.getAuthor().getId().equals(userId);
         boolean isAdmin = requestUser.isAdmin();
 
-        // ВИПРАВЛЕНО: Дозволяємо, якщо це автор АБО адмін
         if (!isAuthor && !isAdmin) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ви можете редагувати лише свої рецепти");
         }
@@ -181,9 +174,15 @@ public class RecipeController {
             }
         }
 
-        Category category = categoryRepository.findByName(updatedRecipeDto.getCategoryName()).orElse(null);
-        if (category != null) {
-            recipe.setCategory(category);
+        // ОНОВЛЕНО: Оновлюємо список категорій
+        recipe.getCategories().clear();
+        if (updatedRecipeDto.getCategoryNames() != null) {
+            for (String catName : updatedRecipeDto.getCategoryNames()) {
+                Category cat = categoryRepository.findByName(catName).orElse(null);
+                if (cat != null) {
+                    recipe.getCategories().add(cat);
+                }
+            }
         }
 
         recipeRepository.save(recipe);
@@ -196,5 +195,13 @@ public class RecipeController {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(recipeService.searchByIngredients(ingredients));
+    }
+
+    @GetMapping("/search-by-name")
+    public ResponseEntity<List<RecipeDTO>> searchRecipesByName(@RequestParam String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(recipeService.searchRecipes(query));
     }
 }

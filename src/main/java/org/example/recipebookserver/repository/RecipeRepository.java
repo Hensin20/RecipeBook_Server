@@ -19,13 +19,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Query("SELECT r FROM Recipe r WHERE LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     List<Recipe> findByTitle(@Param("title") String title);
 
-    @Query("SELECT r FROM Recipe r JOIN r.category c WHERE LOWER(c.name) = LOWER(:categoryName)")
-    List<Recipe> findByCategory(@Param("categoryName") String categoryName);
+    // ОНОВЛЕНО: Тепер ми робимо JOIN з r.categories
+    @Query("SELECT DISTINCT r FROM Recipe r JOIN r.categories c WHERE LOWER(c.name) = LOWER(:categoryName)")
+    List<Recipe> findByCategoriesName(@Param("categoryName") String categoryName);
 
     List<Recipe> findByAuthorUsername(String username);
 
-    List<Recipe> findByCategoryName(String categoryName);
-
-
+    List<Recipe> findByTitleContainingIgnoreCase(String title);
 }
-
