@@ -64,15 +64,17 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.getAllRecipes());
     }
 
+    // ОНОВЛЕНО: Додано userId
     @PostMapping("/{id}/rate")
-    public ResponseEntity<Double> rateRecipe(@PathVariable Long id, @RequestParam int rating) {
+    public ResponseEntity<Double> rateRecipe(@PathVariable Long id, @RequestParam Long userId, @RequestParam int rating) {
         if (rating < 1 || rating > 5) {
             return ResponseEntity.badRequest().build();
         }
         try {
-            double newAverage = recipeService.addRating(id, rating);
+            double newAverage = recipeService.addRating(id, userId, rating);
             return ResponseEntity.ok(newAverage);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -174,7 +176,6 @@ public class RecipeController {
             }
         }
 
-        // ОНОВЛЕНО: Оновлюємо список категорій
         recipe.getCategories().clear();
         if (updatedRecipeDto.getCategoryNames() != null) {
             for (String catName : updatedRecipeDto.getCategoryNames()) {

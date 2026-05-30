@@ -19,6 +19,10 @@ public class Favorite {
     @JoinColumn(name = "recipe_id")
     private Recipe recipe;
 
+    // ДОДАНО: Назва папки/колекції (за замовчуванням "Улюблені")
+    @Column(name = "collection_name")
+    private String collectionName = "Улюблені";
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public Long getId() {
@@ -43,6 +47,14 @@ public class Favorite {
 
     public void setRecipe(Recipe recipe) {
         this.recipe = recipe;
+    }
+
+    public String getCollectionName() {
+        return collectionName;
+    }
+
+    public void setCollectionName(String collectionName) {
+        this.collectionName = collectionName;
     }
 
     public LocalDateTime getCreatedAt() {

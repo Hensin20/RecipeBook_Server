@@ -14,13 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service // Обов'язкова анотація, щоб Spring бачив цей клас
+@Service
 public class FavoriteService {
 
     private final FavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
     private final RecipeRepository recipeRepository;
-    private final RecipeService recipeService; // Підключаємо для мапінгу
+    private final RecipeService recipeService;
 
     public FavoriteService(FavoriteRepository favoriteRepository,
                            UserRepository userRepository,
@@ -32,18 +32,23 @@ public class FavoriteService {
         this.recipeService = recipeService;
     }
 
-    // Отримання списку закладок користувача
     public List<FavoriteDTO> getUserFavorites(String username) {
         return favoriteRepository.findByUserUsername(username).stream()
                 .map(this::mapToFavoriteDTO)
                 .collect(Collectors.toList());
     }
 
-    // Додавання в закладки
+    // ОНОВЛЕНО: Додано collectionName
     @Transactional
-    public void add(String username, Long recipeId) {
-        // Захист від дублікатів (щоб не додати двічі)
-        if (favoriteRepository.existsByUserUsernameAndRecipeId(username, recipeId)) {
+    public void add(String username, Long recipeId, String collectionName) {
+
+        // Якщо папку не вказали, зберігаємо в дефолтну
+        if (collectionName == null || collectionName.trim().isEmpty()) {
+            collectionName = "Улюблені";
+        }
+
+        // Захист від дублікатів (щоб не додати двічі в одну і ту ж папку)
+        if (favoriteRepository.existsByUserUsernameAndRecipeIdAndCollectionName(username, recipeId, collectionName)) {
             return;
         }
 
@@ -55,23 +60,28 @@ public class FavoriteService {
         Favorite favorite = new Favorite();
         favorite.setUser(user);
         favorite.setRecipe(recipe);
+        favorite.setCollectionName(collectionName); // Встановлюємо папку
 
         favoriteRepository.save(favorite);
     }
 
-    // Видалення із закладок
+    // ОНОВЛЕНО: Видалення з конкретної папки
     @Transactional
-    public void remove(String username, Long recipeId) {
-        favoriteRepository.deleteByUserUsernameAndRecipeId(username, recipeId);
+    public void remove(String username, Long recipeId, String collectionName) {
+        if (collectionName == null || collectionName.trim().isEmpty()) {
+            collectionName = "Улюблені";
+        }
+        favoriteRepository.deleteByUserUsernameAndRecipeIdAndCollectionName(username, recipeId, collectionName);
     }
 
-    // Мапінг у DTO
     private FavoriteDTO mapToFavoriteDTO(Favorite favorite) {
         FavoriteDTO dto = new FavoriteDTO();
         dto.setId(favorite.getId());
         dto.setAddedAt(favorite.getCreatedAt());
 
-        // Викликаємо публічний метод мапінгу з RecipeService
+        // Передаємо назву папки на Android
+        dto.setCollectionName(favorite.getCollectionName());
+
         RecipeDTO recipeDTO = recipeService.mapToDTO(favorite.getRecipe());
         dto.setRecipe(recipeDTO);
 

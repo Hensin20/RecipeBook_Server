@@ -17,22 +17,30 @@ public class FavoriteController {
         this.favoriteService = favoriteService;
     }
 
-    // Повертаємо FavoriteDTO замість RecipeDTO
     @GetMapping("/{username}")
     public ResponseEntity<List<FavoriteDTO>> getFavorites(@PathVariable String username) {
         return ResponseEntity.ok(favoriteService.getUserFavorites(username));
     }
 
+    // ОНОВЛЕНО: Приймаємо collectionName (необов'язковий параметр)
     @PostMapping("/add")
-    public ResponseEntity<?> addFavorite(@RequestParam String username, @RequestParam Long recipeId) {
-        favoriteService.add(username, recipeId);
+    public ResponseEntity<?> addFavorite(
+            @RequestParam String username,
+            @RequestParam Long recipeId,
+            @RequestParam(required = false, defaultValue = "Улюблені") String collectionName) {
+
+        favoriteService.add(username, recipeId, collectionName);
         return ResponseEntity.ok("Рецепт додано до закладок");
     }
 
-    // Додав метод для видалення
+    // ОНОВЛЕНО: Приймаємо collectionName для видалення
     @DeleteMapping("/remove")
-    public ResponseEntity<?> removeFavorite(@RequestParam String username, @RequestParam Long recipeId) {
-        favoriteService.remove(username, recipeId);
+    public ResponseEntity<?> removeFavorite(
+            @RequestParam String username,
+            @RequestParam Long recipeId,
+            @RequestParam(required = false, defaultValue = "Улюблені") String collectionName) {
+
+        favoriteService.remove(username, recipeId, collectionName);
         return ResponseEntity.ok("Рецепт видалено із закладок");
     }
 }

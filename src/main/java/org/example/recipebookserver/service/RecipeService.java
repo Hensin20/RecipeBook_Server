@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ public class RecipeService {
     private final UserRepository userRepository;
     private final RecipeImageRepository recipeImageRepository;
     private final InstructionRepository instructionRepository;
+    private final RatingRepository ratingRepository;
 
     public RecipeService(RecipeRepository recipeRepository,
                          IngredientDictionaryRepository ingredientDictionaryRepository,
@@ -40,7 +42,8 @@ public class RecipeService {
                          CategoryRepository categoryRepository,
                          UserRepository userRepository,
                          RecipeImageRepository recipeImageRepository,
-                         InstructionRepository instructionRepository) {
+                         InstructionRepository instructionRepository,
+                         RatingRepository ratingRepository) {
 
         this.recipeRepository = recipeRepository;
         this.ingredientDictionaryRepository = ingredientDictionaryRepository;
@@ -49,6 +52,7 @@ public class RecipeService {
         this.userRepository = userRepository;
         this.recipeImageRepository = recipeImageRepository;
         this.instructionRepository = instructionRepository;
+        this.ratingRepository = ratingRepository;
     }
 
     public List<RecipeDTO> getAllRecipes() {
@@ -90,7 +94,6 @@ public class RecipeService {
         dto.setAverageRating(recipe.getAverageRating());
         dto.setVotesCount(recipe.getVotesCount() != null ? recipe.getVotesCount() : 0);
 
-        // ОНОВЛЕНО: Беремо список категорій і перетворюємо їх на список назв
         List<String> catNames = recipe.getCategories().stream()
                 .map(Category::getName)
                 .collect(Collectors.toList());
@@ -114,7 +117,6 @@ public class RecipeService {
         recipe.setDescription(dto.getDescription());
         recipe.setAverageRating(0.0);
 
-        // ОНОВЛЕНО: Додаємо кілька категорій
         if (dto.getCategoryNames() != null) {
             for (String catName : dto.getCategoryNames()) {
                 Category cat = categoryRepository.findByName(catName).orElse(null);
@@ -187,7 +189,6 @@ public class RecipeService {
         dto.setAverageRating(recipe.getAverageRating());
         dto.setVotesCount(recipe.getVotesCount() != null ? recipe.getVotesCount() : 0);
 
-        // ОНОВЛЕНО: Беремо список категорій
         List<String> catNames = recipe.getCategories().stream()
                 .map(Category::getName)
                 .collect(Collectors.toList());
@@ -221,19 +222,40 @@ public class RecipeService {
     }
 
     @Transactional
-    public double addRating(Long recipeId, int newRating) {
+    public double addRating(Long recipeId, Long userId, int newRating) {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RuntimeException("Recipe not found"));
 
-        double currentAvg = recipe.getAverageRating() != null ? recipe.getAverageRating() : 0.0;
-        int count = recipe.getVotesCount() != null ? recipe.getVotesCount() : 0;
-        double updatedAvg = ((currentAvg * count) + newRating) / (count + 1);
+        // 1. Перевіряємо, чи є вже оцінка від цього користувача
+        Optional<Rating> existingRating = ratingRepository.findByRecipeIdAndUserId(recipeId, userId);
 
-        recipe.setAverageRating(updatedAvg);
-        recipe.setVotesCount(count + 1);
+        if (existingRating.isPresent()) {
+            // Оновлюємо стару оцінку
+            Rating rating = existingRating.get();
+            rating.setScore(newRating);
+            ratingRepository.save(rating);
+        } else {
+            // Створюємо нову оцінку
+            Rating rating = new Rating();
+            rating.setRecipeId(recipeId);
+            rating.setUserId(userId);
+            rating.setScore(newRating);
+            ratingRepository.save(rating);
+        }
+
+        // 2. Рахуємо новий середній бал та кількість голосів
+        Double avg = ratingRepository.getAverageRatingByRecipeId(recipeId);
+        Integer count = ratingRepository.countRatingsByRecipeId(recipeId);
+
+        // Округлюємо до 1 знака після коми
+        double roundedAvg = Math.round(avg * 10.0) / 10.0;
+
+        // 3. Зберігаємо в таблицю рецептів для швидкого доступу
+        recipe.setAverageRating(roundedAvg);
+        recipe.setVotesCount(count);
         recipeRepository.save(recipe);
 
-        return updatedAvg;
+        return roundedAvg;
     }
 
     public List<RecipeDTO> getRecipesByAuthor(String username) {
