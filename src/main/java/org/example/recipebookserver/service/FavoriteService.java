@@ -38,20 +38,14 @@ public class FavoriteService {
                 .collect(Collectors.toList());
     }
 
-    // ОНОВЛЕНО: Додано collectionName
     @Transactional
     public void add(String username, Long recipeId, String collectionName) {
-
-        // Якщо папку не вказали, зберігаємо в дефолтну
         if (collectionName == null || collectionName.trim().isEmpty()) {
             collectionName = "Улюблені";
         }
-
-        // Захист від дублікатів (щоб не додати двічі в одну і ту ж папку)
         if (favoriteRepository.existsByUserUsernameAndRecipeIdAndCollectionName(username, recipeId, collectionName)) {
             return;
         }
-
         User user = userRepository.findFirstByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
         Recipe recipe = recipeRepository.findById(recipeId)
@@ -60,12 +54,10 @@ public class FavoriteService {
         Favorite favorite = new Favorite();
         favorite.setUser(user);
         favorite.setRecipe(recipe);
-        favorite.setCollectionName(collectionName); // Встановлюємо папку
-
+        favorite.setCollectionName(collectionName);
         favoriteRepository.save(favorite);
     }
 
-    // ОНОВЛЕНО: Видалення з конкретної папки
     @Transactional
     public void remove(String username, Long recipeId, String collectionName) {
         if (collectionName == null || collectionName.trim().isEmpty()) {
@@ -74,17 +66,29 @@ public class FavoriteService {
         favoriteRepository.deleteByUserUsernameAndRecipeIdAndCollectionName(username, recipeId, collectionName);
     }
 
+    // НОВИЙ МЕТОД: Перейменування папки
+    @Transactional
+    public void renameCollection(String username, String oldName, String newName) {
+        List<Favorite> favorites = favoriteRepository.findByUserUsernameAndCollectionName(username, oldName);
+        for (Favorite f : favorites) {
+            f.setCollectionName(newName);
+            favoriteRepository.save(f);
+        }
+    }
+
+    // НОВИЙ МЕТОД: Видалення всієї папки
+    @Transactional
+    public void deleteCollection(String username, String collectionName) {
+        favoriteRepository.deleteByUserUsernameAndCollectionName(username, collectionName);
+    }
+
     private FavoriteDTO mapToFavoriteDTO(Favorite favorite) {
         FavoriteDTO dto = new FavoriteDTO();
         dto.setId(favorite.getId());
         dto.setAddedAt(favorite.getCreatedAt());
-
-        // Передаємо назву папки на Android
         dto.setCollectionName(favorite.getCollectionName());
-
         RecipeDTO recipeDTO = recipeService.mapToDTO(favorite.getRecipe());
         dto.setRecipe(recipeDTO);
-
         return dto;
     }
 }

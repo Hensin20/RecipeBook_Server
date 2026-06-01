@@ -22,25 +22,40 @@ public class FavoriteController {
         return ResponseEntity.ok(favoriteService.getUserFavorites(username));
     }
 
-    // ОНОВЛЕНО: Приймаємо collectionName (необов'язковий параметр)
     @PostMapping("/add")
     public ResponseEntity<?> addFavorite(
             @RequestParam String username,
             @RequestParam Long recipeId,
             @RequestParam(required = false, defaultValue = "Улюблені") String collectionName) {
-
         favoriteService.add(username, recipeId, collectionName);
         return ResponseEntity.ok("Рецепт додано до закладок");
     }
 
-    // ОНОВЛЕНО: Приймаємо collectionName для видалення
     @DeleteMapping("/remove")
     public ResponseEntity<?> removeFavorite(
             @RequestParam String username,
             @RequestParam Long recipeId,
             @RequestParam(required = false, defaultValue = "Улюблені") String collectionName) {
-
         favoriteService.remove(username, recipeId, collectionName);
         return ResponseEntity.ok("Рецепт видалено із закладок");
+    }
+
+    // НОВИЙ ЕНДПОІНТ: Перейменування папки
+    @PutMapping("/rename-collection")
+    public ResponseEntity<?> renameCollection(
+            @RequestParam String username,
+            @RequestParam String oldName,
+            @RequestParam String newName) {
+        favoriteService.renameCollection(username, oldName, newName);
+        return ResponseEntity.ok("Папку перейменовано");
+    }
+
+    // НОВИЙ ЕНДПОІНТ: Видалення папки
+    @DeleteMapping("/delete-collection")
+    public ResponseEntity<?> deleteCollection(
+            @RequestParam String username,
+            @RequestParam String collectionName) {
+        favoriteService.deleteCollection(username, collectionName);
+        return ResponseEntity.ok("Папку видалено");
     }
 }
