@@ -3,10 +3,7 @@ package org.example.recipebookserver.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.recipebookserver.DTO.RecipeCreateDTO;
 import org.example.recipebookserver.DTO.RecipeDTO;
-import org.example.recipebookserver.model.Category;
 import org.example.recipebookserver.model.Recipe;
-import org.example.recipebookserver.repository.CategoryRepository;
-import org.example.recipebookserver.repository.IngredientDictionaryRepository;
 import org.example.recipebookserver.repository.RecipeRepository;
 import org.example.recipebookserver.repository.UserRepository;
 import org.example.recipebookserver.service.RecipeService;
@@ -25,21 +22,15 @@ public class RecipeController {
     private final RecipeService recipeService;
     private final ObjectMapper objectMapper;
     private final RecipeRepository recipeRepository;
-    private final CategoryRepository categoryRepository;
-    private final IngredientDictionaryRepository ingredientDictionaryRepository;
     private final UserRepository userRepository;
 
     public RecipeController(RecipeService recipeService,
                             ObjectMapper objectMapper,
                             RecipeRepository recipeRepository,
-                            CategoryRepository categoryRepository,
-                            IngredientDictionaryRepository ingredientDictionaryRepository,
                             UserRepository userRepository) {
         this.recipeService = recipeService;
         this.objectMapper = objectMapper;
         this.recipeRepository = recipeRepository;
-        this.categoryRepository= categoryRepository;
-        this.ingredientDictionaryRepository = ingredientDictionaryRepository;
         this.userRepository = userRepository;
     }
 
@@ -64,7 +55,6 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.getAllRecipes());
     }
 
-    // ОНОВЛЕНО: Додано userId
     @PostMapping("/{id}/rate")
     public ResponseEntity<Double> rateRecipe(@PathVariable Long id, @RequestParam Long userId, @RequestParam int rating) {
         if (rating < 1 || rating > 5) {
@@ -124,70 +114,21 @@ public class RecipeController {
         return ResponseEntity.ok("Рецепт успішно видалено");
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateRecipe(@PathVariable Long id, @RequestBody RecipeDTO updatedRecipeDto, @RequestParam Long userId) {
-        Recipe recipe = recipeRepository.findById(id).orElse(null);
-
-        if (recipe == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Рецепт не знайдено");
+    // --- ОНОВЛЕНИЙ МЕТОД PUT ДЛЯ РЕДАГУВАННЯ ФОТОГРАФІЙ ---
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateRecipe(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestPart("recipe") String recipeJson,
+            @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages) {
+        try {
+            RecipeDTO updatedRecipeDto = objectMapper.readValue(recipeJson, RecipeDTO.class);
+            RecipeDTO savedRecipe = recipeService.updateRecipe(id, userId, updatedRecipeDto, newImages);
+            return ResponseEntity.ok(savedRecipe);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Помилка: " + e.getMessage());
         }
-
-        org.example.recipebookserver.model.User requestUser = userRepository.findById(userId).orElse(null);
-        if (requestUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Користувача не знайдено");
-        }
-
-        boolean isAuthor = (recipe.getAuthor() != null) && recipe.getAuthor().getId().equals(userId);
-        boolean isAdmin = requestUser.isAdmin();
-
-        if (!isAuthor && !isAdmin) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ви можете редагувати лише свої рецепти");
-        }
-
-        recipe.setTitle(updatedRecipeDto.getTitle());
-        recipe.setDescription(updatedRecipeDto.getDescription());
-
-        recipe.getInstructions().clear();
-        org.example.recipebookserver.model.Instruction newInstruction = new org.example.recipebookserver.model.Instruction();
-        newInstruction.setText(updatedRecipeDto.getInstruction());
-        newInstruction.setRecipe(recipe);
-        newInstruction.setStepNumber(1);
-        recipe.getInstructions().add(newInstruction);
-
-        recipe.getIngredients().clear();
-        recipeRepository.saveAndFlush(recipe);
-        if (updatedRecipeDto.getIngredients() != null) {
-            for (org.example.recipebookserver.DTO.IngredientDTO ingDto : updatedRecipeDto.getIngredients()) {
-                org.example.recipebookserver.model.IngredientDictionary dictItem =
-                        ingredientDictionaryRepository.findByName(ingDto.getName()).orElse(null);
-
-                if (dictItem == null) {
-                    dictItem = new org.example.recipebookserver.model.IngredientDictionary();
-                    dictItem.setName(ingDto.getName());
-                    dictItem = ingredientDictionaryRepository.save(dictItem);
-                }
-
-                org.example.recipebookserver.model.RecipeIngredient newIngredient = new org.example.recipebookserver.model.RecipeIngredient();
-                newIngredient.setIngredient(dictItem);
-                newIngredient.setQuantity(ingDto.getQuantity());
-                newIngredient.setRecipe(recipe);
-
-                recipe.getIngredients().add(newIngredient);
-            }
-        }
-
-        recipe.getCategories().clear();
-        if (updatedRecipeDto.getCategoryNames() != null) {
-            for (String catName : updatedRecipeDto.getCategoryNames()) {
-                Category cat = categoryRepository.findByName(catName).orElse(null);
-                if (cat != null) {
-                    recipe.getCategories().add(cat);
-                }
-            }
-        }
-
-        recipeRepository.save(recipe);
-        return ResponseEntity.ok(recipe);
     }
 
     @GetMapping("/search-by-ingredients")

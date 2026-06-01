@@ -178,6 +178,96 @@ public class RecipeService {
         return recipe;
     }
 
+    // --- НОВИЙ МЕТОД ОНОВЛЕННЯ РЕЦЕПТА З ФОТОГРАФІЯМИ ---
+    @Transactional
+    public RecipeDTO updateRecipe(Long recipeId, Long userId, RecipeDTO updatedRecipeDto, List<MultipartFile> newImages) throws IOException {
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Рецепт не знайдено"));
+
+        User requestUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
+
+        boolean isAuthor = (recipe.getAuthor() != null) && recipe.getAuthor().getId().equals(userId);
+        boolean isAdmin = requestUser.isAdmin();
+
+        if (!isAuthor && !isAdmin) {
+            throw new RuntimeException("Ви можете редагувати лише свої рецепти");
+        }
+
+        // Оновлюємо базові поля
+        recipe.setTitle(updatedRecipeDto.getTitle());
+        recipe.setDescription(updatedRecipeDto.getDescription());
+
+        // Оновлюємо інструкцію
+        recipe.getInstructions().clear();
+        Instruction newInstruction = new Instruction();
+        newInstruction.setText(updatedRecipeDto.getInstruction());
+        newInstruction.setRecipe(recipe);
+        newInstruction.setStepNumber(1);
+        recipe.getInstructions().add(newInstruction);
+
+        // Оновлюємо інгредієнти
+        recipe.getIngredients().clear();
+        recipeRepository.saveAndFlush(recipe);
+        if (updatedRecipeDto.getIngredients() != null) {
+            for (IngredientDTO ingDto : updatedRecipeDto.getIngredients()) {
+                IngredientDictionary dictItem = ingredientDictionaryRepository.findByName(ingDto.getName()).orElse(null);
+                if (dictItem == null) {
+                    dictItem = new IngredientDictionary();
+                    dictItem.setName(ingDto.getName());
+                    dictItem = ingredientDictionaryRepository.save(dictItem);
+                }
+
+                RecipeIngredient newIngredient = new RecipeIngredient();
+                newIngredient.setIngredient(dictItem);
+                newIngredient.setQuantity(ingDto.getQuantity());
+                newIngredient.setRecipe(recipe);
+                recipe.getIngredients().add(newIngredient);
+            }
+        }
+
+        // Оновлюємо категорії
+        recipe.getCategories().clear();
+        if (updatedRecipeDto.getCategoryNames() != null) {
+            for (String catName : updatedRecipeDto.getCategoryNames()) {
+                Category cat = categoryRepository.findByName(catName).orElse(null);
+                if (cat != null) {
+                    recipe.getCategories().add(cat);
+                }
+            }
+        }
+
+        // --- ЛОГІКА ДЛЯ ФОТОГРАФІЙ ---
+        // 1. Видаляємо ті фото, яких більше немає у списку від клієнта
+        if (updatedRecipeDto.getImageUrls() != null) {
+            List<String> remainingUrls = updatedRecipeDto.getImageUrls();
+            recipe.getImages().removeIf(img -> !remainingUrls.contains(img.getImageUrl()));
+        } else {
+            recipe.getImages().clear();
+        }
+
+        // 2. Зберігаємо нові фото
+        if (newImages != null && !newImages.isEmpty()) {
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            for (MultipartFile file : newImages) {
+                if (file.isEmpty()) continue;
+                String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+                Path filePath = Paths.get(uploadDir, fileName);
+                Files.write(filePath, file.getBytes());
+
+                RecipeImage recipeImage = new RecipeImage();
+                recipeImage.setRecipe(recipe);
+                recipeImage.setImageUrl(fileName);
+                recipe.getImages().add(recipeImage);
+            }
+        }
+
+        recipe = recipeRepository.save(recipe);
+        return mapToDTO(recipe);
+    }
+
     public RecipeDTO getRecipeById(Long id) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Recipe not found"));
@@ -226,16 +316,13 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RuntimeException("Recipe not found"));
 
-        // 1. Перевіряємо, чи є вже оцінка від цього користувача
         Optional<Rating> existingRating = ratingRepository.findByRecipeIdAndUserId(recipeId, userId);
 
         if (existingRating.isPresent()) {
-            // Оновлюємо стару оцінку
             Rating rating = existingRating.get();
             rating.setScore(newRating);
             ratingRepository.save(rating);
         } else {
-            // Створюємо нову оцінку
             Rating rating = new Rating();
             rating.setRecipeId(recipeId);
             rating.setUserId(userId);
@@ -243,14 +330,11 @@ public class RecipeService {
             ratingRepository.save(rating);
         }
 
-        // 2. Рахуємо новий середній бал та кількість голосів
         Double avg = ratingRepository.getAverageRatingByRecipeId(recipeId);
         Integer count = ratingRepository.countRatingsByRecipeId(recipeId);
 
-        // Округлюємо до 1 знака після коми
         double roundedAvg = Math.round(avg * 10.0) / 10.0;
 
-        // 3. Зберігаємо в таблицю рецептів для швидкого доступу
         recipe.setAverageRating(roundedAvg);
         recipe.setVotesCount(count);
         recipeRepository.save(recipe);

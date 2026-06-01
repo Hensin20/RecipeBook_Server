@@ -23,7 +23,6 @@ public class Recipe {
     @JoinColumn(name = "author_id")
     private User author;
 
-    // --- ОНОВЛЕНО: Тепер рецепт може мати багато категорій ---
     @ManyToMany
     @JoinTable(
             name = "recipe_categories",
@@ -33,85 +32,44 @@ public class Recipe {
     private List<Category> categories = new ArrayList<>();
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<RecipeImage> images;
+    private List<RecipeImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<Instruction> instructions;
+    private List<Instruction> instructions = new ArrayList<>();
 
+    // --- GETTERS & SETTERS ---
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public String getTitle() {
-        return title;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public Integer getVotesCount() {
-        return votesCount;
-    }
+    public Double getAverageRating() { return averageRating; }
+    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
 
-    public void setVotesCount(Integer votesCount) {
-        this.votesCount = votesCount;
-    }
+    public Integer getVotesCount() { return votesCount; }
+    public void setVotesCount(Integer votesCount) { this.votesCount = votesCount; }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public User getAuthor() { return author; }
+    public void setAuthor(User author) { this.author = author; }
 
-    public String getDescription() {
-        return description;
-    }
+    public List<Category> getCategories() { return categories; }
+    public void setCategories(List<Category> categories) { this.categories = categories; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public List<RecipeIngredient> getIngredients() { return ingredients; }
+    public void setIngredients(List<RecipeIngredient> ingredients) { this.ingredients = ingredients; }
 
-    public Double getAverageRating() {
-        return averageRating;
-    }
+    public List<Instruction> getInstructions() { return instructions; }
+    public void setInstructions(List<Instruction> instructions) { this.instructions = instructions; }
 
-    public void setAverageRating(Double averageRating) {
-        this.averageRating = averageRating;
-    }
-
-    public User getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(User author) {
-        this.author = author;
-    }
-
-    // --- ОНОВЛЕНІ GETTER та SETTER для категорій ---
-    public List<Category> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(List<Category> categories) {
-        this.categories = categories;
-    }
-
-    public List<RecipeIngredient> getIngredients() {
-        return ingredients;
-    }
-
-    public void setIngredients(List<RecipeIngredient> ingredients) {
-        this.ingredients = ingredients;
-    }
-
-    public List<Instruction> getInstructions() {
-        return instructions;
-    }
-
-    public void setInstructions(List<Instruction> instructions) {
-        this.instructions = instructions;
-    }
+    // ДОДАНО ДЛЯ РОБОТИ З ФОТОГРАФІЯМИ:
+    public List<RecipeImage> getImages() { return images; }
+    public void setImages(List<RecipeImage> images) { this.images = images; }
 }
